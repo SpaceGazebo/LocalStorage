@@ -9,13 +9,19 @@
 
   function LS (options){
     this.options = options||{};
-    if (this.options.prefix)
+    if (this.options.hasOwnProperty('prefix'))
     {
         this.options.prefix = this.options.prefix+':';
     }
     else
     {
         this.options.prefix = '';
+    }
+    if (!this.options.hasOwnProperty('cleanup'))
+    {
+        this.options.cleanup = [
+            function(){ this.clear(); }
+        ];
     }
     
     var ds = {};
@@ -44,7 +50,32 @@
       return value;
   };
   LS.prototype.set = function(key,value){
-      this.ds.setItem(this.options.prefix+key,value);
+      var l = this.options.cleanup.length;
+      var i = 0;
+      do
+      {
+          try{
+              this.ds.setItem(this.options.prefix+key,value);
+              return;
+          }
+          catch(err)
+          {
+              if ({QUOTA_EXCEEDED_ERR:1,QuotaExceededError:1,NS_ERROR_DOM_QUOTA_REACHED:1}[err.name] && this.options.cleanup[i])
+              {
+                  var result = this.options.cleanup[i].call(this,{key:key,value:value,error:err});
+                  if (false===result)
+                  {
+                      throw err;
+                  }
+              }
+              else
+              {
+                  throw err;
+              }
+          }
+          i++;
+      }
+      while (i < l)
   };
   LS.prototype.rm = function(key){
       this.ds.removeItem(this.options.prefix+key);
@@ -54,7 +85,10 @@
    */
   LS.prototype.clear = function(){
       this.ds.clear();
-  }
+  };
+  LS.prototype.cleanup = function(){
+    
+  };
   LS.prototype.getObj = function(key,def)
   {
     var v = this.get(key);
