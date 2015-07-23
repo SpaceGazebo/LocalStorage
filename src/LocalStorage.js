@@ -60,6 +60,9 @@
             }
             catch(err)
             {
+                /**
+                 * @todo http://crocodillon.com/blog/always-catch-localstorage-security-and-quota-exceeded-errors
+                 */
                 if ({QUOTA_EXCEEDED_ERR:1,QuotaExceededError:1,NS_ERROR_DOM_QUOTA_REACHED:1}[err.name] && this.options.cleanup[i])
                 {
                     var result = this.options.cleanup[i].call(this,{key:key,value:value,error:err});
