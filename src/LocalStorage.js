@@ -1,3 +1,24 @@
+(function (window){
+  function LS (){
+    
+  };
+  } {
+    get:function(){
+      
+    },
+    set:function(){
+      
+    },
+    rm:function(){
+      
+    }
+    clear:function(){
+      
+    }
+  };
+  
+})(window);
+
 function LocalStorageDummy() {
   this.attr = {};
   this.get = function(k,d){return array_get(this.attr,k,d);};
