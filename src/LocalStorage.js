@@ -1,95 +1,82 @@
 (function (window){
-  function LS (){
+  function DataStore (options) {
+      this.data = {};
+  }
+  DataStore.prototype.setItem = function(id, val) { return this.data[id] = String(val); };
+  DataStore.prototype.getItem = function(id) { return this.data.hasOwnProperty(id) ? data[id] : undef; };
+  DataStore.prototype.removeItem = function(id) { return delete this.data[id]; };
+  DataStore.prototype.clear = function() { return this.data = {}; };
+
+  function LS (options){
+    this.options = options||{};
+    if (this.options.prefix)
+    {
+        this.options.prefix = this.options.prefix+':';
+    }
+    else
+    {
+        this.options.prefix = '';
+    }
     
+    var ds = {};
+    try{
+        ds = options.dataStore||window.localStorage||{};
+        ds.setItem('a','a');
+        if (ds.getItem('a')!=='a')
+        {
+            throw 'not a';
+        }
+        ds.removeItem('a');
+    }
+    catch(err)
+    {
+        this.ds = new DataStore();
+    }
   };
-  } {
-    get:function(){
+  LS.prototype.get = function(key,def /*default*/)
+  {
+      var value = this.ds.getItem(this.options.prefix+key);
       
-    },
-    set:function(){
-      
-    },
-    rm:function(){
-      
+      if (typeof value==='undefined' || value===null)
+      {
+          return def;
+      }
+      return value;
+  };
+  LS.prototype.set = function(key,value){
+      this.ds.setItem(this.options.prefix+key,value);
+  };
+  LS.prototype.rm = function(key){
+      this.ds.removeItem(this.options.prefix+key);
+  };
+  /**
+   *  @todo only clear keys that match prefix 
+   */
+  LS.prototype.clear = function(){
+      this.ds.clear();
+  }
+  LS.prototype.getObj = function(key,def)
+  {
+    var v = this.get(key);
+    if (v)
+    {
+        try{
+          return JSON.parse(v);
+        }catch(e){}
     }
-    clear:function(){
-      
-    }
+    if (typeof def !== 'undefined') return def;
+    return v;
+  };
+  LS.prototype.setObj = function(key,value)
+  {
+      this.set(key, JSON.stringify(value))||false;
+  };
+  LS.prototype.concat = function(key,arr){
+      this.setObj(key,this.getObj(key,[]).concat(arr));
   };
   
+  
+  window.SG = window.SG||{};
+  window.SG.DataStore = DataStore;
+  window.SG.LocalStorage = LS;
 })(window);
-
-function LocalStorageDummy() {
-  this.attr = {};
-  this.get = function(k,d){return array_get(this.attr,k,d);};
-  this.set = function(k,v){return array_set(this.attr,k,v);};
-  this.rm = function(k){ delete this.attr[k];};
-  this.concat = function(k,a){ this.setObj(k,this.getObj(k,[]).concat([a])); };
-  this.getObj = function(a,b)
-  {
-    var v = this.get(a);
-    if (v)
-    {
-        try{
-          return JSON.parse(v);
-        }catch(e){}
-    }
-    return b||v;
-  };
-  this.setObj = function(a,b)
-  {
-    return this.set(a, JSON.stringify(b))||false;
-  };
-  this.clear = function(){ this.attr = {}; };
-}
-function supports_local_storage() {
-  try {
-    if ('localStorage' in window && window['localStorage'] !== null)
-    {
-      localStorage.setItem('test', 'test');
-      localStorage.removeItem('test');
-      return true;
-    }
-  } catch(e){}
-  return false;
-}
-function LocalStorageObject () {
-  this.d = {};
-  this.get = function(a,b)
-  {
-    return localStorage.getItem(a) || b;
-  };
-  this.getObj = function(a,b)
-  {
-    var v = this.get(a);
-    if (v)
-    {
-        try{
-          return JSON.parse(v);
-        }catch(e){}
-    }
-    return b||v;
-  };
-  this.set = function(a,b)
-  {
-    return localStorage.setItem(a,b)||false;
-  };
-  this.setObj = function(a,b)
-  {
-    return this.set(a, JSON.stringify(b))||false;
-  };
-  this.rm = function(a)
-  {
-    return localStorage.removeItem(a)||false;
-  };
-  this.clear = function(){ localStorage.clear(); };
-  this.concat = function(k,a){ this.setObj(k,this.getObj(k,[]).concat(a)); };
-}
-if (supports_local_storage())
-{
-  LS = new LocalStorageObject();
-}
-else
-{
-  LS = new LocalStorageDummy();
-}
