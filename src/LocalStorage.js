@@ -1,14 +1,17 @@
+
 (function (window) {
     function DataStore(options) {
         this.data = {};
     }
     DataStore.prototype.setItem = function (id, val) { return this.data[id] = String(val); };
-    DataStore.prototype.getItem = function (id, def) { return this.data.hasOwnProperty(id) ? data[id] : def; };
+    DataStore.prototype.getItem = function (id, def) { return this.data.hasOwnProperty(id) ? this.data[id] : def; };
     DataStore.prototype.removeItem = function (id) { return delete this.data[id]; };
     DataStore.prototype.clear = function () { return this.data = {}; };
 
     function LS(options){
       this.options = options||{};
+      this.options.prefix=this.options.prefix||'';
+      /*
       if (this.options.hasOwnProperty('prefix'))
       {
           this.options.prefix = this.options.prefix+':';
@@ -16,7 +19,7 @@
       else
       {
           this.options.prefix = '';
-      }
+      }*/
       if (!this.options.hasOwnProperty('cleanup'))
       {
           this.options.cleanup = [
@@ -26,7 +29,14 @@
       
       var ds = {};
       try{
-          ds = options.dataStore||window.localStorage||{};
+          if (this.options.hasOwnProperty('dataStore'))
+          {
+              ds = this.options.dataStore;
+          }
+          else
+          {
+              ds = window.localStorage;
+          }
           ds.setItem('a','a');
           if (ds.getItem('a')!=='a')
           {
@@ -36,8 +46,11 @@
       }
       catch(err)
       {
-          this.ds = new DataStore();
+          console.info('DataStore failed, using dummy.');
+          console.error(err)
+          ds = new DataStore();
       }
+      this.ds = ds;
     };
     LS.prototype.get = function(key,def /*default*/)
     {
@@ -60,9 +73,6 @@
             }
             catch(err)
             {
-                /**
-                 * @todo http://crocodillon.com/blog/always-catch-localstorage-security-and-quota-exceeded-errors
-                 */
                 if ({QUOTA_EXCEEDED_ERR:1,QuotaExceededError:1,NS_ERROR_DOM_QUOTA_REACHED:1}[err.name] && this.options.cleanup[i])
                 {
                     var result = this.options.cleanup[i].call(this,{key:key,value:value,error:err});
